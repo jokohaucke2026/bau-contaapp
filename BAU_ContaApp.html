@@ -540,8 +540,14 @@ function saveModal() {
     fetch(APPS_SCRIPT_URL + '?accion=append&tipo=' + tipo + '&fila=' + payload)
     .then(r => r.json())
     .then(j => {
-      if (j.ok) toast('Registro guardado en Sheet');
-      else toast('Error al guardar en Sheet: ' + (j.error||''));
+      if (j.ok) {
+        // Guardar el Id asignado por el Sheet en el registro local
+        if (j.id) {
+          const idx = data[tipo].findIndex(r => rkey(r) === rkey(newRow));
+          if (idx >= 0) { data[tipo][idx]['Id'] = String(j.id); saveLocal(tipo); }
+        }
+        toast('Registro guardado en Sheet (Id: ' + (j.id||'?') + ')');
+      } else toast('Error al guardar en Sheet: ' + (j.error||''));
     })
     .catch(err => toast('No se pudo conectar al Sheet: ' + err.message));
   }
@@ -686,6 +692,12 @@ function parseCSVLine(line) {
 function renderProyectos() {
   const p=data.proyectos||[];
   return `
+  <div class="config-panel">
+    <div class="config-row">
+      <span style="font-size:13px;font-weight:600">Proyectos</span>
+      <button class="btn btn-sync btn-sm" onclick="syncDesdeScript('proyectos')">🔄 Actualizar desde Drive</button>
+    </div>
+  </div>
   <div class="toolbar">
     <div class="toolbar-left"><span class="section-title">Proyectos</span><span class="section-count">${p.length} obras</span></div>
     <button class="btn btn-primary" onclick="openProy(null)">+ Nueva obra</button>
@@ -739,12 +751,45 @@ function openProy(index) {
   document.getElementById('m-save').addEventListener('click',()=>{
     const p={numero:document.getElementById('p-num').value,nombre:document.getElementById('p-nom').value,estado:document.getElementById('p-est').value,cliente:document.getElementById('p-cli').value,cuit:document.getElementById('p-cuit').value,monto:document.getElementById('p-monto').value,moneda:document.getElementById('p-mon').value,inicio:document.getElementById('p-ini').value,fin:document.getElementById('p-fin').value,direccion:document.getElementById('p-dir').value,notas:document.getElementById('p-not').value};
     if(!p.nombre){alert('El nombre es obligatorio');return;}
-    if(index!==null)data.proyectos[index]=p;else data.proyectos.push(p);
-    saveLocal('proyectos');closeModal();render();toast(index!==null?'Obra actualizada':'Obra creada');
+    if(index!==null){
+      // Preservar Id original
+      const orig = data.proyectos[index];
+      if(orig && orig['Id']) p['Id'] = orig['Id'];
+      data.proyectos[index]=p;
+      saveLocal('proyectos');closeModal();render();
+      toast('Actualizando obra en Sheet...');
+      const payload=encodeURIComponent(JSON.stringify(p));
+      const idEnc=encodeURIComponent((p['Id']||'')+'||');
+      fetch(APPS_SCRIPT_URL+'?accion=update&tipo=proyectos&fila='+payload+'&id_viejo='+idEnc)
+      .then(r=>r.json()).then(j=>{toast(j.ok?'Obra actualizada en Sheet':'Error: '+(j.error||''));})
+      .catch(()=>toast('No se pudo conectar al Sheet'));
+    } else {
+      data.proyectos.push(p);
+      saveLocal('proyectos');closeModal();render();
+      toast('Guardando obra en Sheet...');
+      const payload=encodeURIComponent(JSON.stringify(p));
+      fetch(APPS_SCRIPT_URL+'?accion=append&tipo=proyectos&fila='+payload)
+      .then(r=>r.json()).then(j=>{
+        if(j.ok){
+          if(j.id){ const idx2=data.proyectos.findIndex(r=>r===p); if(idx2>=0){data.proyectos[idx2]['Id']=String(j.id);saveLocal('proyectos');} }
+          toast('Obra guardada en Sheet (Id: '+(j.id||'?')+')');
+        } else toast('Error al guardar: '+(j.error||''));
+      }).catch(()=>toast('No se pudo conectar al Sheet'));
+    }
   });
 }
 
-function delProy(i){if(!confirm('¿Eliminar esta obra?'))return;data.proyectos.splice(i,1);saveLocal('proyectos');render();toast('Obra eliminada');}
+function delProy(i){
+  if(!confirm('¿Eliminar esta obra?'))return;
+  const p=data.proyectos[i];
+  const idVal=p['Id']||'';
+  data.proyectos.splice(i,1);
+  saveLocal('proyectos');render();
+  toast('Eliminando obra del Sheet...');
+  fetch(APPS_SCRIPT_URL+'?accion=delete&tipo=proyectos&id_viejo='+encodeURIComponent(idVal+'||'))
+  .then(r=>r.json()).then(j=>{toast(j.ok?'Obra eliminada del Sheet':'Error: '+(j.error||''));})
+  .catch(()=>toast('No se pudo conectar al Sheet'));
+}
 
 // ═══════════════════════════════════════════════
 // STORAGE
@@ -787,6 +832,7 @@ render();
 Promise.all([
   syncDesdeScript('compras'),
   syncDesdeScript('ventas'),
+  syncDesdeScript('proyectos'),
 ]).catch(()=>{});
 </script>
 </body>
