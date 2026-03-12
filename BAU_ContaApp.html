@@ -860,9 +860,42 @@ function loadLocal(){
   data.compras  =JSON.parse(localStorage.getItem('bau_compras')  ||'[]');
   data.ventas   =JSON.parse(localStorage.getItem('bau_ventas')   ||'[]');
   data.proyectos=JSON.parse(localStorage.getItem('bau_proyectos')||'[]');
+  // Contactos: cargar desde cache local si hay, luego sync desde Sheet
   const c=JSON.parse(localStorage.getItem('bau_contactos')||'{}');
   contactos.clientes   =c.clientes   ||[];
   contactos.proveedores=c.proveedores||[];
+}
+
+async function syncContactos() {
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL + '?accion=contactos');
+    if (!resp.ok) return;
+    const json = await resp.json();
+    if (!json.ok) return;
+    const d = json.data || {};
+    // Mapear columnas del Sheet al formato interno
+    contactos.clientes = (d.clientes || []).map(r => ({
+      nombre:    r['Cliente']   || r['Nombre'] || '',
+      cuit:      r['CUIT']      || '',
+      telefono:  r['Teléfono']  || '',
+      celular:   r['Teléfono 2']|| '',
+      email:     r['Email']     || '',
+      direccion: r['Dirección'] || '',
+      localidad: r['Localidad'] || '',
+      provincia: r['Provincia'] || '',
+    })).filter(c => c.nombre);
+    contactos.proveedores = (d.proveedores || []).map(r => ({
+      nombre:    r['Proveedor'] || r['Nombre'] || r['Cliente'] || '',
+      cuit:      r['CUIT']      || '',
+      telefono:  r['Teléfono']  || '',
+      celular:   r['Teléfono 2']|| '',
+      email:     r['Email']     || '',
+      direccion: r['Dirección'] || '',
+      localidad: r['Localidad'] || '',
+      provincia: r['Provincia'] || '',
+    })).filter(c => c.nombre);
+    saveContactos();
+  } catch(e) { console.warn('No se pudieron cargar contactos:', e.message); }
 }
 
 // ═══════════════════════════════════════════════
@@ -893,6 +926,7 @@ Promise.all([
   syncDesdeScript('compras'),
   syncDesdeScript('ventas'),
   syncDesdeScript('proyectos'),
+  syncContactos(),
 ]).catch(()=>{});
 </script>
 </body>
