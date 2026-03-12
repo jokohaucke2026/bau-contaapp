@@ -347,16 +347,33 @@ function bindTableEvents(tipo) {
   document.querySelectorAll('.row-del').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!confirm('¿Eliminar este registro?')) return;
-      data[tipo] = data[tipo].filter(r => rkey(r) !== btn.dataset.key);
-      saveLocal(tipo); render(); toast('Registro eliminado');
+      const k = btn.dataset.key;
+      data[tipo] = data[tipo].filter(r => rkey(r) !== k);
+      saveLocal(tipo); render(); toast('Eliminando en Sheet...');
+      fetch(APPS_SCRIPT_URL + '?accion=delete&tipo=' + tipo + '&id_viejo=' + encodeURIComponent(k))
+      .then(r => r.json())
+      .then(j => {
+        if (j.ok) toast('Registro eliminado del Sheet');
+        else toast('Error al eliminar del Sheet: ' + (j.error||''));
+      })
+      .catch(err => toast('No se pudo conectar al Sheet: ' + err.message));
     });
   });
 
   document.getElementById('btn-del-sel')?.addEventListener('click', () => {
     if (!confirm(`¿Eliminar ${st.selected.size} registros?`)) return;
+    const keys = [...st.selected];
     data[tipo] = data[tipo].filter(r => !st.selected.has(rkey(r)));
     st.selected.clear(); saveLocal(tipo); render();
-    toast(`Registros eliminados`);
+    toast('Eliminando en Sheet...');
+    Promise.all(keys.map(k =>
+      fetch(APPS_SCRIPT_URL + '?accion=delete&tipo=' + tipo + '&id_viejo=' + encodeURIComponent(k))
+      .then(r => r.json())
+    )).then(results => {
+      const errores = results.filter(j => !j.ok).length;
+      if (errores === 0) toast(keys.length + ' registros eliminados del Sheet');
+      else toast(errores + ' errores al eliminar del Sheet');
+    }).catch(() => toast('Error al conectar con el Sheet'));
   });
   document.getElementById('btn-clear-sel')?.addEventListener('click', () => { st.selected.clear(); render(); });
 
@@ -500,7 +517,16 @@ function saveModal() {
     const idx=data[tipo].findIndex(r=>rkey(r)===editKey);
     if(idx>=0) data[tipo][idx]=newRow;
     saveLocal(tipo); closeModal(); render();
-    toast('Registro actualizado (local)');
+    toast('Actualizando en Sheet...');
+    const payload = encodeURIComponent(JSON.stringify(newRow));
+    const idEnc   = encodeURIComponent(editKey);
+    fetch(APPS_SCRIPT_URL + '?accion=update&tipo=' + tipo + '&fila=' + payload + '&id_viejo=' + idEnc)
+    .then(r => r.json())
+    .then(j => {
+      if (j.ok) toast('Registro actualizado en Sheet');
+      else toast('Error al actualizar en Sheet: ' + (j.error||''));
+    })
+    .catch(err => toast('No se pudo conectar al Sheet: ' + err.message));
   } else {
     data[tipo].push(newRow);
     saveLocal(tipo); closeModal(); render();
