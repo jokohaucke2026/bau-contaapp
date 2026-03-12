@@ -166,13 +166,13 @@ const SECCIONES_COMPRAS = [
   { t:'Proveedor',              c:['Proveedor','CUIT'] },
   { t:'Factura',                c:['Emisión','Vencimiento','Tipo','Punto de Venta','N° de Factura','N° de Remito','Servicio Desde','Servicio Hasta'] },
   { t:'Importes',               c:['Subtotal sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','Alícuota IVA','IVA','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total ND','Total NC','Pagado','A Pagar'] },
-  { t:'Clasificación y notas',  c:['Categoría','Estado','Etiquetas','Medio de Pago','Nota Interna','Transportista','Productos','Usuario'] },
+  { t:'Clasificación y notas',  c:['Categoría','Estado','Etiquetas','Medio de Pago','Nota Interna','Productos'] },
 ];
 const SECCIONES_VENTAS = [
   { t:'Cliente',                c:['Cliente','Etiquetas','CUIT','Teléfono','Celular','Email','Dirección','Localidad','Provincia'] },
   { t:'Factura',                c:['Emisión','Vencimiento','Tipo','Punto de Venta','N° de Factura','N° de Remito','Servicio Desde','Servicio Hasta','Vendedor','Lista de Precios'] },
   { t:'Importes',               c:['Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','Alícuota IVA','IVA','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Total Venta','Total ND','Total NC','Cobrado','A Cobrar'] },
-  { t:'Clasificación y notas',  c:['Categoría','Estado','Etiquetas','Medio de Cobro','Nota Cliente','Nota Interna','Transportista','Productos','Usuario'] },
+  { t:'Clasificación y notas',  c:['Categoría','Estado','Medio de Cobro','Nota Cliente','Nota Interna','Productos'] },
 ];
 
 // ═══════════════════════════════════════════════
@@ -442,6 +442,14 @@ function openModal(tipo, editKey) {
                   </div>
                 </div>`;
               if (campo === 'Etiquetas' && tipo === 'ventas') return `
+                <div class="form-group">
+                  <label>Nombre Proyecto</label>
+                  <div class="ac-wrap">
+                    <input type="text" id="${fid}" autocomplete="off"
+                      placeholder="Escribí o seleccioná proyecto…" value="${val}" style="width:100%;border:1px solid #ccc;border-radius:4px;padding:7px 9px;font-size:13px">
+                  </div>
+                </div>`;
+              if (campo === 'Etiquetas' && tipo === 'compras') return `
                 <div class="form-group">
                   <label>Nombre Proyecto</label>
                   <div class="ac-wrap">
