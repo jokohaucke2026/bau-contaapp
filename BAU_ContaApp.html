@@ -505,6 +505,11 @@ function saveModal() {
     const el=document.getElementById('mf_'+fid2(campo));
     if(el) newRow[campo]=el.value;
   });
+  // Preservar el Id original al editar (no está en el formulario)
+  if (editKey) {
+    const rowOrig = data[tipo].find(r=>rkey(r)===editKey);
+    if (rowOrig && rowOrig['Id']) newRow['Id'] = rowOrig['Id'];
+  }
 
   // Guardar contraparte nueva
   const nombre = newRow[cpField];
