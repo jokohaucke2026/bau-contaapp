@@ -156,22 +156,22 @@ let contactoState  = {
 // ═══════════════════════════════════════════════
 // COLUMNAS
 // ═══════════════════════════════════════════════
-const COLS_COMPRAS_ALL = ['Id','Emisión','Vencimiento','Servicio Desde','Servicio Hasta','Proveedor','CUIT','Categoría','Tipo','Punto de Venta','N° de Factura','N° de Remito','Transportista','Subtotal sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total ND','Total NC','Pagado','A Pagar','Estado','Etiquetas','Medio de Pago','Nota Interna','Usuario','Productos'];
-const COLS_VENTAS_ALL  = ['Id','Emisión','Vencimiento','Servicio Desde','Servicio Hasta','Categoría','Cliente','CUIT','Tipo','Punto de Venta','N° de Factura','N° de Remito','Transportista','Vendedor','Lista de Precios','Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Total Venta','Total ND','Total NC','Cobrado','A Cobrar','Estado','Etiquetas','Medio de Cobro','Nota Cliente','Nota Interna','Teléfono','Celular','Dirección','Localidad','Provincia','Email','Productos','Usuario'];
+const COLS_COMPRAS_ALL = ['Id','Emisión','Vencimiento','Servicio Desde','Servicio Hasta','Proveedor','CUIT','Categoría','Tipo','Punto de Venta','N° de Factura','N° de Remito','Transportista','Subtotal sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','Alícuota IVA','IVA','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total ND','Total NC','Pagado','A Pagar','Estado','Etiquetas','Medio de Pago','Nota Interna','Usuario','Productos'];
+const COLS_VENTAS_ALL  = ['Id','Emisión','Vencimiento','Servicio Desde','Servicio Hasta','Categoría','Cliente','CUIT','Tipo','Punto de Venta','N° de Factura','N° de Remito','Transportista','Vendedor','Lista de Precios','Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','Alícuota IVA','IVA','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Total Venta','Total ND','Total NC','Cobrado','A Cobrar','Estado','Etiquetas','Medio de Cobro','Nota Cliente','Nota Interna','Teléfono','Celular','Dirección','Localidad','Provincia','Email','Productos','Usuario'];
 const COLS_COMPRAS_TABLE = ['Estado','Emisión','Proveedor','Categoría','N° de Factura','Subtotal sin Descuento','Total Compra','Pagado','A Pagar','Etiquetas','Medio de Pago','Nota Interna'];
 const COLS_VENTAS_TABLE  = ['Estado','Emisión','Cliente','Etiquetas','Categoría','N° de Factura','Subtotal Sin Descuento','Total Venta','A Cobrar','Cobrado','Medio de Cobro'];
-const COLS_MONEY = new Set(['Subtotal sin Descuento','Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total Venta','Total ND','Total NC','Pagado','A Pagar','Cobrado','A Cobrar','Lista de Precios']);
+const COLS_MONEY = new Set(['Subtotal sin Descuento','Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','Alícuota IVA','IVA','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total Venta','Total ND','Total NC','Pagado','A Pagar','Cobrado','A Cobrar','Lista de Precios']);
 
 const SECCIONES_COMPRAS = [
   { t:'Proveedor',              c:['Proveedor','CUIT'] },
   { t:'Factura',                c:['Emisión','Vencimiento','Tipo','Punto de Venta','N° de Factura','N° de Remito','Servicio Desde','Servicio Hasta'] },
-  { t:'Importes',               c:['Subtotal sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total ND','Total NC','Pagado','A Pagar'] },
+  { t:'Importes',               c:['Subtotal sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','Alícuota IVA','IVA','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total ND','Total NC','Pagado','A Pagar'] },
   { t:'Clasificación y notas',  c:['Categoría','Estado','Etiquetas','Medio de Pago','Nota Interna','Transportista','Productos','Usuario'] },
 ];
 const SECCIONES_VENTAS = [
   { t:'Cliente',                c:['Cliente','Etiquetas','CUIT','Teléfono','Celular','Email','Dirección','Localidad','Provincia'] },
   { t:'Factura',                c:['Emisión','Vencimiento','Tipo','Punto de Venta','N° de Factura','N° de Remito','Servicio Desde','Servicio Hasta','Vendedor','Lista de Precios'] },
-  { t:'Importes',               c:['Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Total Venta','Total ND','Total NC','Cobrado','A Cobrar'] },
+  { t:'Importes',               c:['Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','Alícuota IVA','IVA','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Total Venta','Total ND','Total NC','Cobrado','A Cobrar'] },
   { t:'Clasificación y notas',  c:['Categoría','Estado','Etiquetas','Medio de Cobro','Nota Cliente','Nota Interna','Transportista','Productos','Usuario'] },
 ];
 
@@ -448,6 +448,19 @@ function openModal(tipo, editKey) {
                     <input type="text" id="${fid}" autocomplete="off"
                       placeholder="Escribí o seleccioná proyecto…" value="${val}" style="width:100%;border:1px solid #ccc;border-radius:4px;padding:7px 9px;font-size:13px">
                   </div>
+                </div>`;
+              if (campo === 'Alícuota IVA') return `
+                <div class="form-group">
+                  <label>Alícuota IVA</label>
+                  <select id="${fid}" style="width:100%;border:1px solid #ccc;border-radius:4px;padding:7px 9px;font-size:13px;background:#fff">
+                    <option value="">—</option>
+                    <option value="0%" ${val==='0%'?'selected':''}>0%</option>
+                    <option value="2.5%" ${val==='2.5%'?'selected':''}>2,5%</option>
+                    <option value="5%" ${val==='5%'?'selected':''}>5%</option>
+                    <option value="10.5%" ${val==='10.5%'?'selected':''}>10,5%</option>
+                    <option value="21%" ${val==='21%'||val===''?'selected':''}>21%</option>
+                    <option value="27%" ${val==='27%'?'selected':''}>27%</option>
+                  </select>
                 </div>`;
               if (campo==='Estado') return `
                 <div class="form-group"><label>${esc(campo)}</label>
