@@ -121,6 +121,8 @@ td.actions { white-space: nowrap; width: 72px; }
   <button class="nav-btn active" data-tab="proyectos">Proyectos</button>
   <button class="nav-btn" data-tab="compras">Compras</button>
   <button class="nav-btn" data-tab="ventas">Ventas</button>
+  <button class="nav-btn" data-tab="clientes">Clientes</button>
+  <button class="nav-btn" data-tab="proveedores">Proveedores</button>
 </div>
 
 <div class="main" id="main"></div>
@@ -141,7 +143,11 @@ let tableState = {
   compras: { page:1, perPage:20, search:'', filtroEstado:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
   ventas:  { page:1, perPage:20, search:'', filtroEstado:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
 };
-let proyState = { page:1, perPage:20, search:'', filtroEstado:'' };
+let proyState      = { page:1, perPage:20, search:'', filtroEstado:'' };
+let contactoState  = {
+  clientes:    { page:1, perPage:20, search:'' },
+  proveedores: { page:1, perPage:20, search:'' },
+};
 
 // ═══════════════════════════════════════════════
 // COLUMNAS
@@ -149,7 +155,7 @@ let proyState = { page:1, perPage:20, search:'', filtroEstado:'' };
 const COLS_COMPRAS_ALL = ['Id','Emisión','Vencimiento','Servicio Desde','Servicio Hasta','Proveedor','CUIT','Categoría','Tipo','Punto de Venta','N° de Factura','N° de Remito','Transportista','Subtotal sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total ND','Total NC','Pagado','A Pagar','Estado','Etiquetas','Medio de Pago','Nota Interna','Usuario','Productos'];
 const COLS_VENTAS_ALL  = ['Id','Emisión','Vencimiento','Servicio Desde','Servicio Hasta','Categoría','Cliente','CUIT','Tipo','Punto de Venta','N° de Factura','N° de Remito','Transportista','Vendedor','Lista de Precios','Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Total Venta','Total ND','Total NC','Cobrado','A Cobrar','Estado','Etiquetas','Medio de Cobro','Nota Cliente','Nota Interna','Teléfono','Celular','Dirección','Localidad','Provincia','Email','Productos','Usuario'];
 const COLS_COMPRAS_TABLE = ['Estado','Emisión','Proveedor','Categoría','N° de Factura','Subtotal sin Descuento','Total Compra','Pagado','A Pagar','Etiquetas','Medio de Pago','Nota Interna'];
-const COLS_VENTAS_TABLE  = ['Estado','Emisión','Cliente','Categoría','N° de Factura','Subtotal Sin Descuento','Total Venta','A Cobrar','Cobrado','Etiquetas','Medio de Cobro'];
+const COLS_VENTAS_TABLE  = ['Estado','Emisión','Cliente','Etiquetas','Categoría','N° de Factura','Subtotal Sin Descuento','Total Venta','A Cobrar','Cobrado','Medio de Cobro'];
 const COLS_MONEY = new Set(['Subtotal sin Descuento','Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Sellos','Total Compra','Total Venta','Total ND','Total NC','Pagado','A Pagar','Cobrado','A Cobrar','Lista de Precios']);
 
 const SECCIONES_COMPRAS = [
@@ -159,7 +165,7 @@ const SECCIONES_COMPRAS = [
   { t:'Clasificación y notas',  c:['Categoría','Estado','Etiquetas','Medio de Pago','Nota Interna','Transportista','Productos','Usuario'] },
 ];
 const SECCIONES_VENTAS = [
-  { t:'Cliente',                c:['Cliente','CUIT','Teléfono','Celular','Email','Dirección','Localidad','Provincia'] },
+  { t:'Cliente',                c:['Cliente','Etiquetas','CUIT','Teléfono','Celular','Email','Dirección','Localidad','Provincia'] },
   { t:'Factura',                c:['Emisión','Vencimiento','Tipo','Punto de Venta','N° de Factura','N° de Remito','Servicio Desde','Servicio Hasta','Vendedor','Lista de Precios'] },
   { t:'Importes',               c:['Subtotal Sin Descuento','Descuento en $','Subtotal con Descuento','Importe Neto No Gravado','Importe Neto Exento','Importe Neto Gravado','IVA - 2,5%','IVA - 5%','IVA - 10,5%','IVA - 21%','IVA - 27%','Perc. IVA','Perc. IIBB','Imp. Internos','Imp. Municipales','Total Venta','Total ND','Total NC','Cobrado','A Cobrar'] },
   { t:'Clasificación y notas',  c:['Categoría','Estado','Etiquetas','Medio de Cobro','Nota Cliente','Nota Interna','Transportista','Productos','Usuario'] },
@@ -181,7 +187,8 @@ document.querySelector('.nav').addEventListener('click', e => {
 // ═══════════════════════════════════════════════
 function render() {
   const main = document.getElementById('main');
-  if (currentTab === 'proyectos') { main.innerHTML = renderProyectos(); bindProyEventos(); return; }
+  if (currentTab === 'proyectos')   { main.innerHTML = renderProyectos(); bindProyEventos(); return; }
+  if (currentTab === 'clientes' || currentTab === 'proveedores') { main.innerHTML = renderContactos(currentTab); bindContactosEventos(currentTab); return; }
   main.innerHTML = renderCV(currentTab);
   bindTableEvents(currentTab);
 }
@@ -397,6 +404,8 @@ function openModal(tipo, editKey) {
   const cpField  = tipo==='compras' ? 'Proveedor' : 'Cliente';
   let rowData = editKey ? (data[tipo].find(r=>rkey(r)===editKey)||{}) : {};
   mCtx = { tipo, editKey, allCols, cpField };
+  // Marcar campo Etiquetas como campo de proyecto para autocomplete
+  if (tipo === 'ventas') mCtx.proyField = 'Etiquetas';
 
   const overlay = document.createElement('div');
   overlay.className='modal-overlay'; overlay.id='modal-overlay';
@@ -496,6 +505,46 @@ function initAC(tipo) {
   inp.addEventListener('input', ()=>showDrop(inp.value));
   inp.addEventListener('focus', ()=>showDrop(inp.value));
   document.addEventListener('mousedown', e=>{ if(!inp.contains(e.target)&&!drop.contains(e.target)) drop.style.display='none'; });
+  // Si es ventas, inicializar autocomplete de proyectos también
+  if (tipo === 'ventas') initAC_Proyecto();
+}
+
+function initAC_Proyecto() {
+  const inp  = document.getElementById('mf_Etiquetas');
+  if (!inp) return;
+  // Crear dropdown propio para proyectos
+  const dropId = 'ac-drop-proy';
+  let drop = document.getElementById(dropId);
+  if (!drop) {
+    drop = document.createElement('div');
+    drop.className = 'ac-dropdown';
+    drop.id = dropId;
+    inp.parentNode.style.position = 'relative';
+    inp.parentNode.appendChild(drop);
+  }
+
+  const showDrop = q => {
+    const proyList = data.proyectos || [];
+    const matches = q.length === 0
+      ? proyList.slice(0, 8)
+      : proyList.filter(p => (p.nombre||'').toLowerCase().includes(q.toLowerCase()) || (p.numero||'').includes(q)).slice(0, 8);
+    if (matches.length === 0 && q.length < 2) { drop.style.display='none'; return; }
+    drop.innerHTML = matches.map(p=>`
+      <div class="ac-item" data-nombre="${esc(p.nombre||'')}">
+        <div class="ac-item-name">${esc(p.nombre||'Sin nombre')}</div>
+        <div class="ac-item-sub">${esc([p.numero, p.cliente].filter(Boolean).join(' · '))}</div>
+      </div>`).join('') +
+      (q.length >= 2 ? `<div class="ac-new" id="ac-new-proy">+ Crear proyecto "${esc(q)}"</div>` : '');
+    drop.style.display = 'block';
+    drop.querySelectorAll('.ac-item').forEach(el => {
+      el.addEventListener('click', () => { inp.value = el.dataset.nombre; drop.style.display='none'; });
+    });
+    document.getElementById('ac-new-proy')?.addEventListener('click', () => { drop.style.display='none'; });
+  };
+
+  inp.addEventListener('input',  () => showDrop(inp.value));
+  inp.addEventListener('focus',  () => showDrop(inp.value));
+  document.addEventListener('mousedown', e => { if(!inp.contains(e.target)&&!drop.contains(e.target)) drop.style.display='none'; });
 }
 
 function saveModal() {
@@ -512,11 +561,62 @@ function saveModal() {
     if (rowOrig && rowOrig['Id']) newRow['Id'] = rowOrig['Id'];
   }
 
-  // Guardar contraparte nueva
+  // Guardar contraparte nueva en memoria Y en Sheet de Contactos
   const nombre = newRow[cpField];
   if (nombre && !ctList.find(c=>c.nombre.toLowerCase()===nombre.toLowerCase())) {
-    ctList.push({ nombre, cuit:newRow['CUIT']||'', telefono:newRow['Teléfono']||'', celular:newRow['Celular']||'', email:newRow['Email']||'', direccion:newRow['Dirección']||'', localidad:newRow['Localidad']||'', provincia:newRow['Provincia']||'' });
+    const nuevoContacto = {
+      nombre,
+      cuit:      newRow['CUIT']       || '',
+      telefono:  newRow['Teléfono']   || '',
+      celular:   newRow['Teléfono 2'] || '',
+      email:     newRow['Email']      || '',
+      direccion: newRow['Dirección']  || '',
+      localidad: newRow['Localidad']  || '',
+      provincia: newRow['Provincia']  || '',
+    };
+    ctList.push(nuevoContacto);
     saveContactos();
+    // Enviar al Sheet de Contactos
+    const pestania = tipo === 'compras' ? 'proveedores' : 'clientes';
+    const filaContacto = encodeURIComponent(JSON.stringify({
+      'Proveedor': pestania === 'proveedores' ? nombre : '',
+      'Cliente':   pestania === 'clientes'    ? nombre : '',
+      'CUIT':      nuevoContacto.cuit,
+      'Teléfono':  nuevoContacto.telefono,
+      'Teléfono 2':nuevoContacto.celular,
+      'Email':     nuevoContacto.email,
+      'Dirección': nuevoContacto.direccion,
+      'Localidad': nuevoContacto.localidad,
+      'Provincia': nuevoContacto.provincia,
+    }));
+    fetch(APPS_SCRIPT_URL + '?accion=append_contacto&pestania=' + pestania + '&fila=' + filaContacto)
+    .then(r=>r.json())
+    .then(j=>{ if(j.ok) toast('Contacto guardado en base de datos'); })
+    .catch(()=>{});
+  }
+
+  // Auto-crear proyecto si no existe (solo ventas)
+  if (tipo === 'ventas') {
+    const etiqueta = newRow['Etiquetas'] || '';
+    if (etiqueta && !data.proyectos.find(p => (p.nombre||'').toLowerCase() === etiqueta.toLowerCase())) {
+      const nuevoProyecto = {
+        nombre:  etiqueta,
+        cliente: newRow['Cliente'] || '',
+        estado:  'Presupuestado',
+        numero:  '', moneda: 'ARS', monto: '', inicio: '', fin: '', direccion: '', notas: ''
+      };
+      data.proyectos.push(nuevoProyecto);
+      saveLocal('proyectos');
+      const payload = encodeURIComponent(JSON.stringify(nuevoProyecto));
+      fetch(APPS_SCRIPT_URL + '?accion=append&tipo=proyectos&fila=' + payload)
+      .then(r=>r.json()).then(j=>{
+        if(j.ok && j.id) {
+          const idx2 = data.proyectos.findIndex(p=>p===nuevoProyecto);
+          if(idx2>=0){ data.proyectos[idx2]['Id']=String(j.id); saveLocal('proyectos'); }
+          toast('Proyecto "'+etiqueta+'" creado (Id: '+j.id+')');
+        }
+      }).catch(()=>{});
+    }
   }
 
   if (editKey) {
@@ -771,6 +871,72 @@ function badgeEstadoProy(val) {
   return `<span class="badge badge-pendiente">${esc(val)}</span>`;
 }
 
+function renderContactos(tipo) {
+  const lista = tipo === 'clientes' ? contactos.clientes : contactos.proveedores;
+  const st = contactoState[tipo];
+  const label = tipo === 'clientes' ? 'Clientes' : 'Proveedores';
+
+  let rows = lista;
+  if (st.search) {
+    const q = st.search.toLowerCase();
+    rows = rows.filter(r => ['nombre','cuit','email','telefono','localidad'].some(c => String(r[c]||'').toLowerCase().includes(q)));
+  }
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / st.perPage));
+  st.page = Math.min(st.page, totalPages);
+  const pageRows = rows.slice((st.page-1)*st.perPage, st.page*st.perPage);
+
+  const COLS = ['nombre','cuit','telefono','celular','email','direccion','localidad','provincia'];
+  const LABELS = {'nombre':'Nombre','cuit':'CUIT','telefono':'Teléfono','celular':'Celular','email':'Email','direccion':'Dirección','localidad':'Localidad','provincia':'Provincia'};
+
+  return `
+  <div class="config-panel">
+    <div class="config-row">
+      <span style="font-size:13px;font-weight:600">${label}</span>
+      <button class="btn btn-sync btn-sm" onclick="syncContactos()">🔄 Actualizar desde Drive</button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <span class="section-title">${label}</span>
+      <span class="section-count">${rows.length} registros</span>
+    </div>
+    <div class="toolbar-right">
+      <input type="text" class="inp-search" id="ct-search" placeholder="Buscar..." value="${esc(st.search)}">
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        ${COLS.map(c=>`<th>${LABELS[c]}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${pageRows.length===0
+          ? `<tr><td colspan="${COLS.length}" class="empty-table">Sin registros.</td></tr>`
+          : pageRows.map(r=>`<tr>
+              ${COLS.map(c=>`<td>${esc(String(r[c]||''))}</td>`).join('')}
+            </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="pagination">
+      <span>${rows.length} registros · Página ${st.page} de ${totalPages}</span>
+      <div class="pag-btns">
+        <button class="pag-btn" id="ct-prev" ${st.page<=1?'disabled':''}>‹ Anterior</button>
+        <button class="pag-btn" id="ct-next" ${st.page>=totalPages?'disabled':''}>Siguiente ›</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindContactosEventos(tipo) {
+  const st = contactoState[tipo];
+  document.getElementById('ct-search')?.addEventListener('input', e=>{ st.search=e.target.value; st.page=1; render(); });
+  document.getElementById('ct-prev')?.addEventListener('click', ()=>{ st.page--; render(); });
+  document.getElementById('ct-next')?.addEventListener('click', ()=>{ st.page++; render(); });
+}
+
 function bindProyEventos() {
   document.getElementById('proy-search')?.addEventListener('input', e=>{ proyState.search=e.target.value; proyState.page=1; render(); });
   document.getElementById('proy-estado')?.addEventListener('change', e=>{ proyState.filtroEstado=e.target.value; proyState.page=1; render(); });
@@ -875,7 +1041,7 @@ async function syncContactos() {
     const d = json.data || {};
     // Mapear columnas del Sheet al formato interno
     contactos.clientes = (d.clientes || []).map(r => ({
-      nombre:    r['Cliente']   || r['Nombre'] || '',
+      nombre:    r['Cliente'] || '',
       cuit:      r['CUIT']      || '',
       telefono:  r['Teléfono']  || '',
       celular:   r['Teléfono 2']|| '',
@@ -885,7 +1051,7 @@ async function syncContactos() {
       provincia: r['Provincia'] || '',
     })).filter(c => c.nombre);
     contactos.proveedores = (d.proveedores || []).map(r => ({
-      nombre:    r['Proveedor'] || r['Nombre'] || r['Cliente'] || '',
+      nombre:    r['Proveedor'] || '',
       cuit:      r['CUIT']      || '',
       telefono:  r['Teléfono']  || '',
       celular:   r['Teléfono 2']|| '',
@@ -895,6 +1061,7 @@ async function syncContactos() {
       provincia: r['Provincia'] || '',
     })).filter(c => c.nombre);
     saveContactos();
+    console.log('Contactos cargados:', contactos.clientes.length, 'clientes,', contactos.proveedores.length, 'proveedores');
   } catch(e) { console.warn('No se pudieron cargar contactos:', e.message); }
 }
 
