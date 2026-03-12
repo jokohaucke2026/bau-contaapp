@@ -112,6 +112,10 @@ td.actions { white-space: nowrap; width: 72px; }
 .section-count { font-size: 13px; color: #888; }
 
 #toast { position: fixed; bottom: 24px; right: 24px; background: #222; color: white; padding: 11px 18px; border-radius: 6px; font-size: 13px; z-index: 9999; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+.origen-tabs-wrap { display:flex; gap:6px; padding:8px 16px 0; }
+.origen-btn { padding:5px 14px; border-radius:20px; border:1px solid #ddd; background:#f5f5f5; font-size:12px; cursor:pointer; color:#555; transition:all .15s; }
+.origen-btn.active { background:#1a1a2e; color:#fff; border-color:#1a1a2e; font-weight:600; }
+.origen-btn:hover:not(.active) { background:#e8e8e8; }
 </style>
 </head>
 <body>
@@ -140,8 +144,8 @@ let data = { compras:[], ventas:[], proyectos:[] };
 let contactos = { clientes:[], proveedores:[] };
 let syncStatus = { compras: 'idle', ventas: 'idle' }; // idle | loading | ok | error
 let tableState = {
-  compras: { page:1, perPage:20, search:'', filtroEstado:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
-  ventas:  { page:1, perPage:20, search:'', filtroEstado:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
+  compras: { page:1, perPage:20, search:'', filtroEstado:'', filtroOrigen:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
+  ventas:  { page:1, perPage:20, search:'', filtroEstado:'', filtroOrigen:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
 };
 let proyState      = { page:1, perPage:20, search:'', filtroEstado:'' };
 let contactoState  = {
@@ -255,6 +259,12 @@ function renderCV(tipo) {
       </label>
       <button class="btn btn-primary" onclick="openModal('${tipo}',null)">+ Agregar registro</button>
     </div>
+  </div>
+
+  <div class="origen-tabs-wrap">
+    <button class="origen-btn \${st.filtroOrigen===''?'active':''}"          onclick="setFiltroOrigen('${tipo}','')">Todo</button>
+    <button class="origen-btn \${st.filtroOrigen==='Historial'?'active':''}" onclick="setFiltroOrigen('${tipo}','Historial')">Historial</button>
+    <button class="origen-btn \${st.filtroOrigen==='Registros'?'active':''}" onclick="setFiltroOrigen('${tipo}','Registros')">Nuevo</button>
   </div>
 
   <div class="summary-row">
@@ -1195,12 +1205,19 @@ async function syncContactos() {
 // ═══════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════
+function setFiltroOrigen(tipo, origen) {
+  tableState[tipo].filtroOrigen = origen;
+  tableState[tipo].page = 1;
+  render();
+}
+
 function getFiltered(tipo){
   const st=tableState[tipo];
   const cols=tipo==='compras'?COLS_COMPRAS_TABLE:COLS_VENTAS_TABLE;
   let rows=data[tipo]||[];
   if(st.search){const q=st.search.toLowerCase();rows=rows.filter(r=>cols.some(c=>String(r[c]||'').toLowerCase().includes(q)));}
   if(st.filtroEstado){rows=rows.filter(r=>(r['Estado']||'').toLowerCase().includes(st.filtroEstado));}
+  if(st.filtroOrigen){rows=rows.filter(r=>(r['_origen']||'Registros')===st.filtroOrigen);}
   if(st.sortCol){rows=[...rows].sort((a,b)=>{let va=a[st.sortCol]||'',vb=b[st.sortCol]||'';const na=parseFloat(String(va).replace(/[^0-9.-]/g,'')),nb=parseFloat(String(vb).replace(/[^0-9.-]/g,''));if(!isNaN(na)&&!isNaN(nb)){va=na;vb=nb;}return va<vb?-st.sortDir:va>vb?st.sortDir:0;});}
   return rows;
 }
