@@ -499,11 +499,23 @@ function saveModal() {
   if (editKey) {
     const idx=data[tipo].findIndex(r=>rkey(r)===editKey);
     if(idx>=0) data[tipo][idx]=newRow;
+    saveLocal(tipo); closeModal(); render();
+    toast('Registro actualizado (local)');
   } else {
     data[tipo].push(newRow);
+    saveLocal(tipo); closeModal(); render();
+    toast('⏳ Guardando en Sheet…');
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ tipo: tipo, fila: newRow }),
+    })
+    .then(r => r.json())
+    .then(j => {
+      if (j.ok) toast('✅ Registro guardado en Sheet');
+      else toast('⚠️ Error al guardar en Sheet: ' + (j.error||''));
+    })
+    .catch(() => toast('⚠️ No se pudo conectar al Sheet'));
   }
-  saveLocal(tipo); closeModal(); render();
-  toast(editKey?'Registro actualizado':'Registro agregado');
 }
 
 function closeModal() {
