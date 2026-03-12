@@ -141,6 +141,7 @@ let tableState = {
   compras: { page:1, perPage:20, search:'', filtroEstado:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
   ventas:  { page:1, perPage:20, search:'', filtroEstado:'', sortCol:'Emisión', sortDir:-1, selected: new Set() },
 };
+let proyState = { page:1, perPage:20, search:'', filtroEstado:'' };
 
 // ═══════════════════════════════════════════════
 // COLUMNAS
@@ -180,7 +181,7 @@ document.querySelector('.nav').addEventListener('click', e => {
 // ═══════════════════════════════════════════════
 function render() {
   const main = document.getElementById('main');
-  if (currentTab === 'proyectos') { main.innerHTML = renderProyectos(); return; }
+  if (currentTab === 'proyectos') { main.innerHTML = renderProyectos(); bindProyEventos(); return; }
   main.innerHTML = renderCV(currentTab);
   bindTableEvents(currentTab);
 }
@@ -690,7 +691,24 @@ function parseCSVLine(line) {
 // PROYECTOS
 // ═══════════════════════════════════════════════
 function renderProyectos() {
-  const p=data.proyectos||[];
+  const p = data.proyectos || [];
+  const st = proyState;
+
+  // Filtrar
+  let rows = p;
+  if (st.search) {
+    const q = st.search.toLowerCase();
+    rows = rows.filter(r => ['numero','nombre','cliente','estado','direccion'].some(c => String(r[c]||'').toLowerCase().includes(q)));
+  }
+  if (st.filtroEstado) rows = rows.filter(r => (r.estado||'').toLowerCase() === st.filtroEstado);
+
+  const COLS = ['numero','nombre','cliente','estado','monto','moneda','inicio','fin','direccion'];
+  const LABELS = {'numero':'N° Obra','nombre':'Nombre','cliente':'Cliente','estado':'Estado','monto':'Monto','moneda':'Moneda','inicio':'Inicio','fin':'Fin Est.','direccion':'Dirección'};
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / st.perPage));
+  st.page = Math.min(st.page, totalPages);
+  const pageRows = rows.slice((st.page-1)*st.perPage, st.page*st.perPage);
+
   return `
   <div class="config-panel">
     <div class="config-row">
@@ -698,26 +716,68 @@ function renderProyectos() {
       <button class="btn btn-sync btn-sm" onclick="syncDesdeScript('proyectos')">🔄 Actualizar desde Drive</button>
     </div>
   </div>
+
   <div class="toolbar">
-    <div class="toolbar-left"><span class="section-title">Proyectos</span><span class="section-count">${p.length} obras</span></div>
-    <button class="btn btn-primary" onclick="openProy(null)">+ Nueva obra</button>
+    <div class="toolbar-left">
+      <span class="section-title">Proyectos</span>
+      <span class="section-count">${rows.length} obras</span>
+    </div>
+    <div class="toolbar-right">
+      <input type="text" class="inp-search" id="proy-search" placeholder="Buscar..." value="${esc(st.search)}">
+      <select class="sel-filter" id="proy-estado">
+        <option value="">Todos los estados</option>
+        ${['Presupuestado','Ganado','En curso','Pausado','Finalizado','Perdido','Cancelado'].map(e=>`<option value="${e.toLowerCase()}" ${st.filtroEstado===e.toLowerCase()?'selected':''}>${e}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary" onclick="openProy(null)">+ Nueva obra</button>
+    </div>
   </div>
-  ${p.length===0
-    ?`<div style="background:white;border:1px solid #ddd;border-radius:6px;padding:48px;text-align:center;color:#bbb">No hay obras. Creá la primera.</div>`
-    :`<div class="proj-grid">${p.map((x,i)=>`
-      <div class="proj-card">
-        <div class="proj-card-num">${esc(x.numero||'S/N')}</div>
-        <div class="proj-card-nombre">${esc(x.nombre||'Sin nombre')}</div>
-        <div class="proj-card-cliente">${esc(x.cliente||'Sin cliente')}</div>
-        <div class="proj-card-footer">
-          <span class="badge badge-pendiente">${esc(x.estado||'')}</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-sm btn-secondary" onclick="openProy(${i})">✏️</button>
-            <button class="btn btn-sm btn-danger" onclick="delProy(${i})">🗑</button>
-          </div>
-        </div>
-      </div>`).join('')}</div>`}`;
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        ${COLS.map(c=>`<th>${LABELS[c]}</th>`).join('')}
+        <th>Acciones</th>
+      </tr></thead>
+      <tbody>
+        ${pageRows.length===0
+          ? `<tr><td colspan="${COLS.length+1}" class="empty-table">Sin obras. Creá la primera.</td></tr>`
+          : pageRows.map((x,i)=>{
+              const realIdx = data.proyectos.indexOf(x);
+              return `<tr>
+                ${COLS.map(c=>`<td>${c==='estado'?badgeEstadoProy(x.estado||''):esc(String(x[c]||''))}</td>`).join('')}
+                <td class="actions">
+                  <button class="btn btn-sm btn-secondary" onclick="openProy(${realIdx})" title="Editar">✏️</button>
+                  <button class="btn btn-sm btn-danger" onclick="delProy(${realIdx})" title="Eliminar">🗑</button>
+                </td>
+              </tr>`;
+            }).join('')}
+      </tbody>
+    </table>
+    <div class="pagination">
+      <span>${rows.length} registros · Página ${st.page} de ${totalPages}</span>
+      <div class="pag-btns">
+        <button class="pag-btn" id="proy-prev" ${st.page<=1?'disabled':''}>‹ Anterior</button>
+        <button class="pag-btn" id="proy-next" ${st.page>=totalPages?'disabled':''}>Siguiente ›</button>
+      </div>
+    </div>
+  </div>`;
 }
+
+function badgeEstadoProy(val) {
+  const v = val.toLowerCase();
+  if (v==='ganado'||v==='finalizado') return `<span class="badge badge-pagado">${esc(val)}</span>`;
+  if (v==='perdido'||v==='cancelado') return `<span class="badge badge-vencido">${esc(val)}</span>`;
+  if (v==='en curso') return `<span class="badge badge-cobrar">${esc(val)}</span>`;
+  return `<span class="badge badge-pendiente">${esc(val)}</span>`;
+}
+
+function bindProyEventos() {
+  document.getElementById('proy-search')?.addEventListener('input', e=>{ proyState.search=e.target.value; proyState.page=1; render(); });
+  document.getElementById('proy-estado')?.addEventListener('change', e=>{ proyState.filtroEstado=e.target.value; proyState.page=1; render(); });
+  document.getElementById('proy-prev')?.addEventListener('click', ()=>{ proyState.page--; render(); });
+  document.getElementById('proy-next')?.addEventListener('click', ()=>{ proyState.page++; render(); });
+}
+
 
 function openProy(index) {
   const x=index!==null?(data.proyectos[index]||{}):{};
@@ -728,7 +788,7 @@ function openProy(index) {
       <div class="modal-header"><div class="modal-title">${index!==null?'Editar':'Nueva'} obra</div><button class="modal-close" id="m-close">✕</button></div>
       <div class="modal-body"><div class="form-grid">
         <div class="form-group"><label>N° de Obra</label><input id="p-num" value="${esc(x.numero||'')}"></div>
-        <div class="form-group"><label>Estado</label><select id="p-est">${['Presupuestado','En curso','Pausado','Finalizado','Cancelado'].map(e=>`<option ${(x.estado||'')=== e?'selected':''}>${e}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Estado</label><select id="p-est">${['Presupuestado','Ganado','En curso','Pausado','Finalizado','Perdido','Cancelado'].map(e=>`<option ${(x.estado||'')=== e?'selected':''}>${e}</option>`).join('')}</select></div>
         <div class="form-group form-full"><label>Nombre *</label><input id="p-nom" value="${esc(x.nombre||'')}"></div>
         <div class="form-group"><label>Cliente</label><input id="p-cli" value="${esc(x.cliente||'')}"></div>
         <div class="form-group"><label>CUIT</label><input id="p-cuit" value="${esc(x.cuit||'')}"></div>
