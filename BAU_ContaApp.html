@@ -504,17 +504,15 @@ function saveModal() {
   } else {
     data[tipo].push(newRow);
     saveLocal(tipo); closeModal(); render();
-    toast('⏳ Guardando en Sheet…');
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ tipo: tipo, fila: newRow }),
-    })
+    toast('Guardando en Sheet...');
+    const payload = encodeURIComponent(JSON.stringify(newRow));
+    fetch(APPS_SCRIPT_URL + '?accion=append&tipo=' + tipo + '&fila=' + payload)
     .then(r => r.json())
     .then(j => {
-      if (j.ok) toast('✅ Registro guardado en Sheet');
-      else toast('⚠️ Error al guardar en Sheet: ' + (j.error||''));
+      if (j.ok) toast('Registro guardado en Sheet');
+      else toast('Error al guardar en Sheet: ' + (j.error||''));
     })
-    .catch(() => toast('⚠️ No se pudo conectar al Sheet'));
+    .catch(err => toast('No se pudo conectar al Sheet: ' + err.message));
   }
 }
 
